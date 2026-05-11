@@ -6,8 +6,19 @@
   --font-serif: "Playfair Display", serif;
   --color-gold: #C5A059;
   --color-maroon: #1e0808;
+  --color-maroon-dark: #120303;
   --color-maroon-light: #2d0a0a;
   --color-cream: #fefae0;
+}
+
+@layer utilities {
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .ease-out-expo {
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 @layer base {

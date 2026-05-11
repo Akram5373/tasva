@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { ChefHat, Clock, MapPin, Phone, Instagram, Facebook, Utensils, Star, Quote, Mail } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, FormEvent } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 
 // --- Constants ---
@@ -17,95 +17,237 @@ const RESTAURANT_INFO = {
 
 const MENU_CATEGORIES = [
   { id: 'starters', title: 'Starters' },
-  { id: 'mains', title: 'Main Course' },
-  { id: 'biryanis', title: 'Biryanis' },
+  { id: 'rice_biryani', title: 'Rice & Biryani' },
+  { id: 'fried_rice_noodles', title: 'Fried Rice & Noodles' },
+  { id: 'curries', title: 'Main Course' },
+  { id: 'breads', title: 'Breads' },
   { id: 'desserts', title: 'Desserts' },
 ];
 
 const MENU_ITEMS = {
   starters: [
-    { name: "Godavari Paneer Kanti", price: "349", desc: "Velvety cottage cheese medallions kissed by the hearth and local heirloom spices" },
-    { name: "Kodi Miriyala Roast", price: "429", desc: "Tender chicken tossed in a robust black pepper and curry leaf reduction" },
-    { name: "Mokkajonna Vepudu", price: "299", desc: "Crispy sweet corn tempered with green chilies and fresh coriander" },
-    { name: "Gongura Royyala Vepudu", price: "489", desc: "Zesty prawns sautéed with slow-cooked sorrel leaf paste" }
+    { name: "Godavari Paneer Kanti", price: "349", desc: "Artisanal cottage cheese medallions, char-grilled over embers and infused with a secret blend of Godavari heritage spices." },
+    { name: "Kodi Miriyala Roast", price: "429", desc: "Succulent morsels of chicken, triple-tempered with cracked black peppercorns and aromatic curry leaves." },
+    { name: "Coriander Chicken", price: "399", desc: "Vibrant South Indian chicken tossed in a lush, house-made coriander and green chili paste." },
+    { name: "Mutton Ghee Roast", price: "460", desc: "Tender mutton slow-cooked in clarified butter with a rich blend of Kundapur spices." },
+    { name: "Guntur Chilli Wings", price: "389", desc: "Crispy wings tossed in a fiery Guntur red chili glaze." },
+    { name: "Apollo Fish", price: "449", desc: "Coastal style spicy fried fish medallions tossed in a signature curry leaf temper." },
+    { name: "Veg Manchurian", price: "299", desc: "Crispy vegetable dumplings in a dark, tangy soy-garlic reduction." },
+    { name: "Honey Chilli Potato", price: "289", desc: "Golden fried potato batons coated in a sweet and spicy sesame glaze." },
+    { name: "Bangla Paneer", price: "320", desc: "Potato-crusted cottage cheese batons, deep-fried to a golden crunch." },
+    { name: "Gongura Mushrooms", price: "299", desc: "Fresh mushrooms sautéed with tangy roselle leaves and regional spices." }
   ],
-  mains: [
-    { name: "Godavari Rajulu Bojanam", price: "549", desc: "A royal assembly of seasonal curries, served with traditional heritage rice" },
-    { name: "Korameenu Pulusu", price: "589", desc: "Murrel fish slow-simmered in a tangy tamarind and spice infusion" },
-    { name: "Mamsam Iguru", price: "529", desc: "Slow-braised country lamb in a thick, aromatically charged gravy" },
-    { name: "Beerakaya Paalu-Posina Kura", price: "329", desc: "Ridge gourd cooked in a delicate milk-based heritage sauce" }
+  rice_biryani: [
+    { name: "Nizam-e-Tasva Biryani", price: "529", desc: "Fragrant long-grain Basmati and marrow-soft meat, 'Dum' cooked in sealed earthen vessels." },
+    { name: "Ulavacharu Pottel Biryani", price: "549", desc: "Basmati rice infused with slow-reduced horse gram broth and spice-lacquered lamb." },
+    { name: "Avakaya Chicken Pulao", price: "489", desc: "A spicy regional specialty featuring chicken flavored with traditional mango pickle." },
+    { name: "Gongura Mutton Biryani", price: "559", desc: "Tangy Gongura leaves layered with tender mutton and aromatic saffron rice." },
+    { name: "Konaseema Veg Pulao", price: "429", desc: "Fragrant rice layered with garden produce, mace, star anise, and toasted cashews." },
+    { name: "Paneer 65 Biryani", price: "459", desc: "Spiced paneer cubes layered with fragrant Basmati rice and caramelised onions." }
   ],
-  biryanis: [
-    { name: "Nizam-e-Tasva Biryani", price: "529", desc: "Fragrant Basmati and succulent meat, steam-sealed in ancient clay pots" },
-    { name: "Ulavacharu Pottel Biryani", price: "549", desc: "Our signature blend of slow-reduced horse gram and spice-crusted lamb" },
-    { name: "Konaseema Veg Pulao", price: "429", desc: "Garden-fresh produce layered with spice-infused long grain rice" }
+  fried_rice_noodles: [
+    { name: "Schezwan Chicken Fried Rice", price: "369", desc: "Wok-tossed rice with shredded chicken and house-made fiery Schezwan sauce." },
+    { name: "Egg Soft Noodles", price: "329", desc: "Classic stir-fried noodles with farm eggs and crunchy garden vegetables." },
+    { name: "Tasva Special Mix Fried Rice", price: "419", desc: "A lavish blend of prawns, chicken, and egg tossed with aromatic jasmine rice." },
+    { name: "Burnt Garlic Veg Noodles", price: "299", desc: "Silken noodles infused with deeply toasted garlic and spring onions." },
+    { name: "Chilli Garlic Chicken Noodles", price: "379", desc: "Spicy noodles tossed with chicken and a robust garlic-chili infusion." }
+  ],
+  curries: [
+    { name: "Kodi Koora (Godavari Style)", price: "399", desc: "Bone-in chicken slow-cooked in a robust gravy infused with Guntur red chilies." },
+    { name: "Gongura Mamsam", price: "459", desc: "Andhra masterpiece: tender mutton meet the distinctive, tangy punch of Roselle leaves." },
+    { name: "Kaju Mushroom Masala", price: "329", desc: "Whole roasted cashews and button mushrooms in a rich, creamy onion-tomato base." },
+    { name: "Nellore Chepala Pulusu", price: "489", desc: "Authentic tangine fish curry cooked with raw mango and tamarind." },
+    { name: "Paneer Butter Masala", price: "349", desc: "Cottage cheese cubes in a velvety, mildly spiced tomato and butter gravy." }
+  ],
+  breads: [
+    { name: "Butter Naan", price: "90", desc: "Soft and chewy leavened bread brushed with premium butter." },
+    { name: "Garlic Naan", price: "110", desc: "Artisanal naan infused with fresh garlic and coriander." },
+    { name: "Lachha Paratha", price: "89", desc: "Multi-layered whole wheat bread baked in the tandoor." },
+    { name: "Tandoori Roti", price: "65", desc: "Classic whole wheat bread baked in a clay oven." }
   ],
   desserts: [
-    { name: "Mamidi Tandra Phirni", price: "249", desc: "A fusion of mango jelly and silk-smooth rice pudding" },
-    { name: "Kakinada Gaja with Rabri", price: "229", desc: "Traditional regional sweet served with a modern creamy glaze" },
-    { name: "Elachi Annam Payasam", price: "279", desc: "Heirloom rice slow-simmered in cardamom-infused milk and jaggery" }
+    { name: "Signature Jalebi Platter", price: "249", desc: "Crisp, golden jalebis served with aromatic syrup and silken rabri." },
+    { name: "Elaneer Payasam", price: "225", desc: "Tender coconut pulp and cooling coconut milk, sweetened with palm jaggery." },
+    { name: "Baked Gulab Jamun", price: "239", desc: "Reduced milk dumplings baked in a rich cardamom-infused syrup." }
   ]
 };
 
 const IMAGES = {
-  hero: "/src/IMG_6388-HDR_1.jpg", 
-  about: "/src/IMG_6303-HDR_1.jpg",
-  food1: "/src/IMG_6318-HDR_1.jpg",
-  food2: "/src/IMG_6303-HDR_1.jpg",
-  interior: "/src/IMG_6388-HDR_1.jpg", 
+  hero: "/images/IMG_6388-HDR_1.jpg", 
+  about: "/images/IMG_6303-HDR_1.jpg",
+  food1: "/images/IMG_6318-HDR_1.jpg",
+  food2: "/images/IMG_6303-HDR_1.jpg", // Fallback to existing
+  interior: "/images/IMG_6388-HDR_1.jpg", 
   gallery: [
-    "/src/IMG_6303-HDR_1.jpg",
-    "/src/IMG_6318-HDR_1.jpg",
-    "/src/IMG_6388-HDR_1.jpg"
+    "/images/IMG_6303-HDR_1.jpg",
+    "/images/IMG_6318-HDR_1.jpg",
+    "/images/IMG_6388-HDR_1.jpg"
   ]
 };
 
+const GUEST_EXPERIENCES = [
+  {
+    name: "Satish Tirumala",
+    rating: 5,
+    text: "Dining experience was excellent, good ambience and good service by staff.",
+    source: "Google Reviews",
+    date: "2 months ago"
+  },
+  {
+    name: "Aditya Verma",
+    rating: 5,
+    text: "The Konaseema Veg Pulao is a revelation. The aromatic spices are perfectly balanced. Truly a fine dining gem in Tadepalligudem.",
+    source: "Google Reviews",
+    date: "1 month ago"
+  },
+  {
+    name: "Priyanka Reddy",
+    rating: 5,
+    text: "Exquisite presentation and authentic Godavari flavors. The Mamsam Iguru is a must-try for any meat lover.",
+    source: "Google Reviews",
+    date: "3 weeks ago"
+  }
+];
+
+const RATINGS_SUMMARY = [
+  { platform: "Google", score: "4.6", total: "343 reviews", icon: "/images/logo.png" },
+  { platform: "Zomato", score: "4.0", total: "343 votes", icon: "/images/logo.png" },
+  { platform: "Swiggy", score: "4.2", total: "44 ratings", icon: "/images/logo.png" }
+];
+
 // --- Components ---
-const Navbar = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
+const CustomCursor = () => {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    const handleMouseMove = (e: MouseEvent) => {
+      setPosition({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('a, button, [role="button"], .cursor-pointer')) {
+        setIsHovering(true);
+      } else {
+        setIsHovering(false);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseover', handleMouseOver);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseover', handleMouseOver);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 w-8 h-8 rounded-full border border-gold/30 pointer-events-none z-[9999] hidden md:flex items-center justify-center mix-blend-difference"
+      animate={{
+        x: position.x - 16,
+        y: position.y - 16,
+        scale: isHovering ? 2.5 : 1,
+        backgroundColor: isHovering ? "rgba(197, 160, 89, 0.1)" : "rgba(197, 160, 89, 0)",
+      }}
+      transition={{ type: "spring", damping: 30, stiffness: 200, mass: 0.5 }}
+    >
+      <div className="w-1 h-1 bg-gold rounded-full" />
+    </motion.div>
+  );
+};
+
+const Navbar = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { scrollYProgress } = useScroll();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled ? 'bg-maroon/90 backdrop-blur-xl py-6 border-b border-gold/10' : 'bg-transparent py-10'}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${
+      isScrolled ? 'bg-maroon/95 backdrop-blur-xl py-6 border-b border-gold/10' : 'bg-maroon py-12 border-b border-gold/20'
+    }`}>
+      <motion.div 
+        className="absolute bottom-0 left-0 h-[2px] bg-gold z-[70] origin-left"
+        style={{ scaleX: scrollYProgress }}
+      />
       <div className="max-w-7xl mx-auto px-8 md:px-12 flex justify-between items-center">
-        <a href="/" className="flex items-center gap-3 group">
+        <a href="/" className="flex items-center gap-4 group">
           {/* Logo Container */}
-          <div className="h-10 md:h-12 flex items-center">
-            {/* Logic: If you upload logo.png to /src, this will work. Otherwise it fails gracefully to text */}
+          <div className={`transition-all duration-700 flex items-center ${isScrolled ? 'h-10 md:h-12' : 'h-12 md:h-16'}`}>
             <img 
-              src="/src/logo.png" 
+              src="/images/logo.png" 
               alt="Tasva Logo" 
-              className="h-full w-auto object-contain brightness-0 invert opacity-90 group-hover:opacity-100 transition-opacity"
+              className="h-full w-auto object-contain brightness-0 invert opacity-90 group-hover:opacity-100 transition-all duration-700"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="hidden text-2xl font-light tracking-[0.4em] uppercase text-cream">
+            <div className="hidden text-3xl font-light tracking-[0.6em] uppercase text-cream">
               Tasva <span className="text-gold font-medium">.</span>
             </div>
           </div>
         </a>
-        <div className="hidden md:flex gap-12 text-[10px] uppercase tracking-[0.3em] text-cream/60">
-          {['Menu', 'About', 'Gallery', 'Contact'].map((item) => (
+        <div className="hidden md:flex gap-8 lg:gap-16 text-[10px] lg:text-[11px] uppercase tracking-[0.4em] text-cream/70">
+          {['Menu', 'Offers', 'About', 'Gallery', 'Reviews', 'Contact'].map((item) => (
              <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-gold transition-all relative group py-2">
                {item}
                <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-gold transition-all group-hover:w-full"></span>
              </a>
           ))}
         </div>
-        <a href="#contact" className="px-8 py-3 bg-gold/10 border border-gold/30 text-gold text-[10px] uppercase tracking-widest hover:bg-gold hover:text-maroon transition-all duration-500 rounded-sm">
-          Reserve
-        </a>
+        <div className="flex items-center gap-8">
+           <div className="hidden xl:flex flex-col items-end gap-1">
+             <span className="text-[8px] uppercase tracking-widest text-gold/40">Reservations</span>
+             <span className="text-[10px] text-gold font-light tracking-widest">+91 88188 88188</span>
+           </div>
+           <a href="#contact" className="px-10 py-4 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.3em] hover:bg-gold hover:text-maroon transition-all duration-500 rounded-sm bg-gold/5">
+             Book Table
+           </a>
+        </div>
       </div>
     </nav>
   );
 };
+
+const Offers = () => (
+  <section id="offers" className="py-32 px-8 md:px-12 bg-maroon-dark relative overflow-hidden">
+    <div className="max-w-7xl mx-auto">
+      <SectionHeading title="Gourmet Privileges" subtitle="Special Offers" />
+      <div className="grid md:grid-cols-3 gap-8">
+        {[
+          { title: "Corporate Excellence", desc: "Flat ₹150 Off on corporate orders above ₹1299.", code: "AXISREWARDS", icon: ChefHat },
+          { title: "Midweek Indulgence", desc: "10% Off up to ₹75 on select credit cards.", code: "VISAPLATINUMCC", icon: Utensils },
+          { title: "First Visit Grace", desc: "Extra ₹50 Off on orders above ₹299 for newcomers.", code: "NO CODE REQUIRED", icon: Star }
+        ].map((offer, i) => (
+          <motion.div 
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="p-10 border border-gold/10 bg-maroon/40 backdrop-blur-sm relative group hover:border-gold/30 transition-all rounded-sm overflow-hidden"
+          >
+            <offer.icon className="absolute -right-4 -bottom-4 h-24 w-24 text-gold/5 group-hover:text-gold/10 transition-all" />
+            <h3 className="font-serif text-2xl text-gold mb-4 italic font-light">{offer.title}</h3>
+            <p className="text-cream/60 text-sm mb-8 leading-relaxed">{offer.desc}</p>
+            <div className="flex flex-col gap-2">
+              <span className="text-[9px] uppercase tracking-widest text-gold/40">Use Code</span>
+              <span className="text-xs uppercase tracking-[0.3em] font-medium text-cream">{offer.code}</span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
 
 const SectionHeading = ({ title, subtitle, centered = true }: { title: string; subtitle?: string; centered?: boolean }) => (
   <div className={`mb-24 ${centered ? 'text-center' : ''}`}>
@@ -141,13 +283,13 @@ const Hero = () => {
   const scale = useTransform(scrollY, [0, 800], [1, 1.1]);
 
   return (
-    <div id="hero" className="relative h-screen overflow-hidden flex items-center bg-black">
+    <div id="hero" className="relative h-[85vh] md:h-[calc(100vh-160px)] min-h-[700px] overflow-hidden flex items-center bg-black">
       {/* Cinematic Video Background */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div style={{ scale }} className="w-full h-full">
           <iframe 
             src="https://player.vimeo.com/video/1191169232?background=1&autoplay=1&loop=1&byline=0&title=0&muted=1&controls=0&transparent=1&speed=0.75"
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-full min-h-full w-auto h-auto scale-[1.05] aspect-video object-cover"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vh] min-w-[177.77vh] min-h-[56.25vw] object-cover pointer-events-none"
             frameBorder="0" 
             allow="autoplay; fullscreen; picture-in-picture" 
             allowFullScreen
@@ -166,32 +308,50 @@ const Hero = () => {
 
       <motion.div style={{ y, opacity }} className="max-w-7xl mx-auto px-8 md:px-12 relative z-20 w-full text-center">
         <motion.div
-           initial={{ opacity: 0, y: 30 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ duration: 1.5, ease: "easeOut" }}
+           initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
+           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+           transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span className="text-gold font-sans text-[10px] sm:text-xs font-medium uppercase tracking-[0.8em] mb-12 block">
+          <motion.span 
+            initial={{ opacity: 0, letterSpacing: '0.4em' }}
+            animate={{ opacity: 1, letterSpacing: '0.8em' }}
+            transition={{ delay: 0.5, duration: 1.5 }}
+            className="text-gold font-sans text-[10px] sm:text-xs font-medium uppercase mb-12 block"
+          >
             An Unrivalled Culinary Legacy
-          </span>
+          </motion.span>
           
-          <h1 className="font-serif text-6xl md:text-9xl lg:text-[11rem] text-cream mb-12 tracking-tighter leading-[0.85] italic font-thin drop-shadow-2xl">
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 2, ease: [0.16, 1, 0.3, 1] }}
+            className="font-serif text-6xl md:text-9xl lg:text-[11rem] text-cream mb-12 tracking-tighter leading-[0.85] italic font-thin drop-shadow-2xl"
+          >
             A Heritage <br/>
             of <span className="text-gold italic font-extralight tracking-tight">Flavor.</span>
-          </h1>
+          </motion.h1>
 
           <div className="flex flex-col items-center gap-10">
-            <p className="text-lg md:text-2xl text-cream/80 max-w-2xl font-serif italic font-extralight leading-relaxed tracking-tight">
-              Traditional Telugu soul, modern elegance. Discover the golden ratio of spice and culture at Godavari's first premium fine-dining atelier.
-            </p>
-            
-            <motion.div 
+            <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.8, duration: 1 }}
+              transition={{ delay: 0.8, duration: 1.5 }}
+              className="text-lg md:text-2xl text-cream/80 max-w-2xl font-serif italic font-extralight leading-relaxed tracking-tight"
+            >
+              Traditional Telugu soul, modern elegance. Discover the golden ratio of spice and culture at Godavari's first premium fine-dining atelier.
+            </motion.p>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2, duration: 1, ease: "easeOut" }}
               className="flex flex-col md:flex-row items-center gap-12 mt-10"
             >
-              <a href="#menu" className="px-16 py-5 bg-gold text-maroon text-[11px] uppercase tracking-[0.5em] font-medium hover:bg-cream hover:tracking-[0.6em] transition-all duration-700">
-                Explore the Menu
+              <a href="#menu" className="relative group px-16 py-5 overflow-hidden">
+                <div className="absolute inset-0 bg-gold transition-transform duration-700 group-hover:scale-x-110" />
+                <span className="relative z-10 text-maroon text-[11px] uppercase tracking-[0.5em] font-medium transition-all group-hover:tracking-[0.6em]">
+                  Explore the Menu
+                </span>
               </a>
               <a href="#contact" className="group flex items-center gap-4 text-[10px] uppercase tracking-[0.4em] text-cream/60 hover:text-gold transition-all">
                 <span className="w-12 h-[1px] bg-gold/30 group-hover:w-20 transition-all duration-700"></span>
@@ -233,10 +393,10 @@ const About = () => (
            transition={{ duration: 1.5 }}
            className="relative z-10 overflow-hidden ring-1 ring-gold/10 group"
         >
-          <div className="relative w-full aspect-video bg-black overflow-hidden">
+          <div className="relative w-full aspect-video bg-black overflow-hidden rounded-sm ring-1 ring-gold/20">
             <iframe 
               src="https://player.vimeo.com/video/1191169232?background=1&autoplay=1&loop=1&byline=0&title=0&muted=1&controls=0&transparent=1"
-              className="absolute inset-[0%] w-full h-full pointer-events-none scale-[1.01] group-hover:scale-110 transition-transform duration-[4s] ease-out"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-[102%] min-h-[102%] w-auto h-auto aspect-video object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-1000"
               frameBorder="0" 
               allow="autoplay; fullscreen; picture-in-picture" 
               allowFullScreen
@@ -327,22 +487,37 @@ const Menu = () => {
       <div className="max-w-5xl mx-auto">
         <SectionHeading title="The Gourmet Selection" subtitle="Savour" />
         
-        <div className="flex justify-center gap-16 mb-24 border-b border-cream/5 overflow-x-auto pb-8 scrollbar-hide">
-          {MENU_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveTab(cat.id)}
-              className={`text-[10px] uppercase tracking-[0.5em] transition-all whitespace-nowrap relative pb-3 flex items-center gap-3 ${
-                activeTab === cat.id ? 'text-gold' : 'text-cream/30 hover:text-cream'
-              }`}
-            >
-              {activeTab === cat.id && <span className="w-1 h-1 bg-gold rounded-full" />}
-              {cat.title}
-              {activeTab === cat.id && (
-                <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-[1px] bg-gold" />
-              )}
-            </button>
-          ))}
+        <div className="relative mb-32 group/menu">
+          {/* Decorative scroll indicators for mobile */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-maroon-light to-transparent z-10 md:hidden pointer-events-none opacity-0 group-hover/menu:opacity-100 transition-opacity" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-maroon-light to-transparent z-10 md:hidden pointer-events-none opacity-0 group-hover/menu:opacity-100 transition-opacity" />
+          
+          <div className="flex md:flex-wrap md:justify-center items-center gap-x-4 md:gap-x-10 gap-y-6 lg:gap-x-16 border-b border-cream/5 overflow-x-auto md:overflow-x-visible pb-8 scrollbar-hide px-4 md:px-0 scroll-smooth">
+            {MENU_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                id={`tab-${cat.id}`}
+                onClick={() => {
+                  setActiveTab(cat.id);
+                  document.getElementById(`tab-${cat.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }}
+                className={`text-[12px] md:text-[13px] uppercase tracking-[0.4em] md:tracking-[0.6em] transition-all whitespace-nowrap relative py-5 px-6 flex items-center gap-3 group/btn cursor-pointer ${
+                  activeTab === cat.id ? 'text-gold' : 'text-cream/30 hover:text-gold/60'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full transition-all duration-500 ring-1 ring-offset-2 ring-offset-maroon-light ${
+                  activeTab === cat.id ? 'bg-gold scale-100 ring-gold/40' : 'bg-transparent scale-0 ring-transparent'
+                }`} />
+                <span className="font-medium">{cat.title}</span>
+                {activeTab === cat.id && (
+                  <motion.div 
+                    layoutId="tab-underline" 
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-gold shadow-[0_0_10px_rgba(197,160,89,0.3)]" 
+                  />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         <AnimatePresence mode="wait">
@@ -400,6 +575,48 @@ const Menu = () => {
   );
 };
 
+const GalleryImage = ({ src, alt, className, onClick }: { src: string; alt: string; className?: string; onClick?: () => void }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className="relative w-full h-full overflow-hidden bg-black/20 group">
+      {/* Shimmer/Placeholder */}
+      {!isLoaded && !hasError && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-maroon-dark/50 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gold/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <div className="w-8 h-8 rounded-full border border-gold/10 border-t-gold/40 animate-spin" />
+            <span className="text-[8px] uppercase tracking-[0.4em] text-gold/30">Loading Narrative</span>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {hasError && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-maroon-dark/80 p-6 text-center">
+          <Utensils className="text-gold/20 mb-4 h-8 w-8 stroke-1" />
+          <p className="text-[10px] text-gold/40 uppercase tracking-widest leading-relaxed">Identity Lost in Transit</p>
+        </div>
+      )}
+
+      <img 
+        src={src} 
+        loading="lazy"
+        onLoad={() => setIsLoaded(true)}
+        onError={() => setHasError(true)}
+        onClick={onClick}
+        className={`${className} ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-110'} transition-all duration-[1.5s] ease-out-expo`} 
+        alt={alt}
+      />
+    </div>
+  );
+};
+
 const Gallery = () => {
   const [index, setIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -423,14 +640,14 @@ const Gallery = () => {
                 exit={{ x: -100, opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                 className="absolute inset-0 cursor-pointer"
-                onClick={() => setSelectedImage(images[index])}
               >
-                <img 
+                <GalleryImage 
                   src={images[index]} 
-                  className="w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-105" 
                   alt={`Gallery ${index + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-105"
+                  onClick={() => setSelectedImage(images[index])}
                 />
-                <div className="absolute inset-0 bg-maroon/20 group-hover:bg-transparent transition-colors duration-1000" />
+                <div className="absolute inset-0 bg-maroon/20 group-hover:bg-transparent transition-colors duration-1000 pointer-events-none" />
               </motion.div>
             </AnimatePresence>
 
@@ -533,6 +750,95 @@ const Gallery = () => {
   );
 };
 
+const Reviews = () => (
+  <section id="reviews" className="py-48 bg-maroon-light relative overflow-hidden">
+    <div className="max-w-7xl mx-auto px-8 md:px-12 relative z-10">
+      <SectionHeading title="Guest Experiences" subtitle="Memoirs" />
+      
+      {/* Ratings Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
+        {RATINGS_SUMMARY.map((rating, idx) => (
+          <motion.div
+            key={rating.platform}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="p-8 border border-gold/10 bg-maroon flex flex-col items-center text-center group hover:border-gold/30 transition-all duration-700"
+          >
+            <div className="flex gap-1 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star 
+                  key={i} 
+                  size={12} 
+                  className={i < Math.floor(parseFloat(rating.score)) ? "fill-gold text-gold" : "text-gold/20"} 
+                />
+              ))}
+            </div>
+            <span className="text-4xl font-serif italic text-cream mb-2">{rating.score}</span>
+            <span className="text-[10px] uppercase tracking-[0.4em] text-gold font-medium mb-4">{rating.platform}</span>
+            <div className="w-8 h-[1px] bg-gold/20 group-hover:w-16 transition-all duration-700 mb-4" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-cream/30">{rating.total}</span>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Testimonials Grid */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
+        {GUEST_EXPERIENCES.map((review, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: idx * 0.2 }}
+            className="relative p-10 border border-gold/5 hover:border-gold/20 transition-all duration-700 flex flex-col"
+          >
+            <Quote className="text-gold/10 absolute top-8 right-8 h-12 w-12 stroke-[0.5]" />
+            <div className="flex gap-1 mb-6">
+              {[...Array(review.rating)].map((_, i) => (
+                <Star key={i} size={10} className="fill-gold text-gold" />
+              ))}
+            </div>
+            <p className="text-lg font-serif italic text-cream/70 leading-relaxed mb-10 relative z-10">
+              "{review.text}"
+            </p>
+            <div className="mt-auto pt-8 border-t border-gold/5 flex items-center justify-between">
+              <div>
+                <h4 className="text-[11px] uppercase tracking-widest text-gold mb-1">{review.name}</h4>
+                <p className="text-[9px] uppercase tracking-widest text-cream/20">{review.source} &bull; {review.date}</p>
+              </div>
+              <div className="w-8 h-8 rounded-full border border-gold/10 flex items-center justify-center">
+                <Star size={12} className="text-gold/20" />
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="mt-32 text-center">
+        <a 
+          href="https://share.google/zATtVwLC7DrQfVMHm" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="group inline-flex flex-col items-center gap-6"
+        >
+          <span className="text-[10px] uppercase tracking-[0.6em] text-cream/40 group-hover:text-gold transition-colors">Read All Memoirs</span>
+          <div className="w-20 h-[1px] bg-gold/20 relative overflow-hidden">
+            <motion.div 
+              animate={{ x: ['100%', '-100%'] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+              className="absolute inset-0 bg-gold w-1/2"
+            />
+          </div>
+        </a>
+      </div>
+    </div>
+
+    {/* Decorative BG elements */}
+    <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gold/2 blur-[150px] pointer-events-none" />
+    <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-maroon-dark blur-[150px] pointer-events-none" />
+  </section>
+);
+
 const LocationMap = () => {
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY || ''; // Fixed: Using import.meta.env
   const hasValidKey = Boolean(API_KEY);
@@ -574,7 +880,7 @@ const LocationMap = () => {
 const ReservationForm = () => {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setStatus('submitting');
     setTimeout(() => setStatus('success'), 1500);
@@ -734,7 +1040,7 @@ const Footer = () => (
       <div className="grid md:grid-cols-3 gap-20 items-center mb-20">
         <div className="h-10 flex items-center">
           <img 
-            src="/src/logo.png" 
+            src="/images/logo.png" 
             alt="Tasva Logo" 
             className="h-full w-auto object-contain brightness-0 invert opacity-60 hover:opacity-100 transition-opacity"
             onError={(e) => {
@@ -772,25 +1078,31 @@ const Footer = () => (
 export default function App() {
   return (
     <div className="bg-maroon text-cream font-sans selection:bg-gold selection:text-maroon scroll-smooth overflow-x-hidden relative">
+      <CustomCursor />
       {/* Global Grain Archive Texture */}
       <div className="fixed inset-0 pointer-events-none z-[100] opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
       
       <Navbar />
+      <div className="h-0 md:h-40" /> {/* Spacer for Fixed Navbar */}
       <main>
         <Hero />
+        <Offers />
         <About />
         <Menu />
         <Gallery />
+        <Reviews />
         <Contact />
       </main>
+
+      <Footer />
 
       <div className="fixed left-0 top-0 bottom-0 w-[1px] bg-gold/5 hidden 3xl:block" />
       <div className="fixed right-0 top-0 bottom-0 w-[1px] bg-gold/5 hidden 3xl:block" />
       
       {/* Scroll indicator - right side */}
       <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-6 items-center hidden xl:flex z-40 opacity-20 hover:opacity-50 transition-opacity">
-        {['hero', 'about', 'menu', 'gallery', 'contact'].map((section) => (
-          <a key={section} href={`#${section}`} className="w-1 h-1 rounded-full bg-gold transition-all hover:scale-[3]" />
+        {['hero', 'offers', 'about', 'menu', 'gallery', 'reviews', 'contact'].map((section) => (
+          <a key={section} href={`#${section}`} className="w-1 h-1 rounded-full bg-gold transition-all hover:scale-[3]" title={section} />
         ))}
       </div>
     </div>
