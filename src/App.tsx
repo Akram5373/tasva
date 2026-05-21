@@ -8,7 +8,7 @@ const RESTAURANT_INFO = {
   name: "Tasva - The Fine Dine",
   tagline: "Tradition Reimagined. Heritage Reclaimed.",
   address: "KN Road, Tadepalligudem – 534101",
-  phone: "+91 88188 88188",
+  phone: "+91 91335 11199",
   email: "tasvathefinedine@gmail.com",
   hours: "11:30 AM - 10:30 PM",
   description: "The premier fine-dining destination in the Godavari heartland, where ancestral Telugu recipes meet contemporary culinary artistry.",
@@ -81,7 +81,12 @@ const IMAGES = {
   gallery: [
     "/images/IMG_6303-HDR_1.jpg",
     "/images/IMG_6318-HDR_1.jpg",
-    "/images/IMG_6388-HDR_1.jpg"
+    "/images/IMG_6328-HDR_1.jpg",
+    "/images/IMG_6388-HDR_1.jpg",
+    "/images/IMG_6323-HDR_1.jpg",
+    "/images/IMG_6343-HDR_1.jpg",
+    "/images/IMG_6363-HDR_1.jpg",
+    "/images/IMG_6378-HDR_1.jpg"
   ]
 };
 
@@ -207,7 +212,7 @@ const Navbar = () => {
         <div className="flex items-center gap-8">
            <div className="hidden xl:flex flex-col items-end gap-1">
              <span className="text-[8px] uppercase tracking-widest text-gold/40">Reservations</span>
-             <span className="text-[10px] text-gold font-light tracking-widest">+91 88188 88188</span>
+             <span className="text-[10px] text-gold font-light tracking-widest">{RESTAURANT_INFO.phone}</span>
            </div>
            <a href="#contact" className="px-10 py-4 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.3em] hover:bg-gold hover:text-maroon transition-all duration-500 rounded-sm bg-gold/5">
              Book Table
@@ -487,21 +492,39 @@ const Menu = () => {
       <div className="max-w-5xl mx-auto">
         <SectionHeading title="The Gourmet Selection" subtitle="Savour" />
         
-        <div className="relative mb-32 group/menu">
+        <div className="sticky top-[80px] md:relative md:top-0 z-30 mb-20 md:mb-32 group/menu bg-maroon-light/95 backdrop-blur-md -mx-8 px-8 md:mx-0 md:px-0 py-6 transition-all border-b border-gold/5 md:border-none">
           {/* Decorative scroll indicators for mobile */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-maroon-light to-transparent z-10 md:hidden pointer-events-none opacity-0 group-hover/menu:opacity-100 transition-opacity" />
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-maroon-light to-transparent z-10 md:hidden pointer-events-none opacity-0 group-hover/menu:opacity-100 transition-opacity" />
+          <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-maroon-light to-transparent z-10 md:hidden pointer-events-none opacity-40" />
+          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-maroon-light to-transparent z-10 md:hidden pointer-events-none opacity-40" />
           
-          <div className="flex md:flex-wrap md:justify-center items-center gap-x-4 md:gap-x-10 gap-y-6 lg:gap-x-16 border-b border-cream/5 overflow-x-auto md:overflow-x-visible pb-8 scrollbar-hide px-4 md:px-0 scroll-smooth">
+          <div className="flex md:flex-wrap md:justify-center items-center gap-x-4 md:gap-x-10 gap-y-6 lg:gap-x-16 border-b md:border-b border-cream/5 overflow-x-auto md:overflow-x-visible pb-4 md:pb-8 scrollbar-hide px-4 md:px-0 scroll-smooth">
             {MENU_CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 id={`tab-${cat.id}`}
                 onClick={() => {
                   setActiveTab(cat.id);
-                  document.getElementById(`tab-${cat.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                  const element = document.getElementById(`tab-${cat.id}`);
+                  element?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                  
+                  // For mobile scroll adjustment when sticky
+                  if (window.innerWidth < 768) {
+                    const menuSection = document.getElementById('menu');
+                    if (menuSection) {
+                      const offset = 140; // Navbar + Sticky Tabs roughly
+                      const bodyRect = document.body.getBoundingClientRect().top;
+                      const elementRect = menuSection.getBoundingClientRect().top;
+                      const elementPosition = elementRect - bodyRect;
+                      const offsetPosition = elementPosition - offset;
+
+                      window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }
                 }}
-                className={`text-[12px] md:text-[13px] uppercase tracking-[0.4em] md:tracking-[0.6em] transition-all whitespace-nowrap relative py-5 px-6 flex items-center gap-3 group/btn cursor-pointer ${
+                className={`text-[12px] md:text-[13px] uppercase tracking-[0.4em] md:tracking-[0.6em] transition-all whitespace-nowrap relative py-3 md:py-5 px-4 md:px-6 flex items-center gap-3 group/btn cursor-pointer ${
                   activeTab === cat.id ? 'text-gold' : 'text-cream/30 hover:text-gold/60'
                 }`}
               >
@@ -1063,12 +1086,17 @@ const Footer = () => (
         </div>
       </div>
       <div className="flex flex-col md:flex-row justify-between items-center gap-8 border-t border-gold/5 pt-12">
-        <p className="text-[10px] uppercase tracking-[0.4em] text-gold/30 font-light italic">
-          &copy; 2024 Tasva Fine Dine. All Rights Reserved.
-        </p>
+        <div className="flex flex-col items-center md:items-start gap-3">
+          <h4 className="text-xs md:text-[13px] uppercase tracking-[0.35em] text-gold font-semibold text-center md:text-left">
+            Tasva is a unit of KN ENTERPRISES
+          </h4>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-cream/40 font-light italic text-center md:text-left">
+            &copy; 2024 Tasva Fine Dine. All Rights Reserved.
+          </p>
+        </div>
         <div className="flex items-center gap-4">
            <div className="h-[1px] w-12 bg-gold/10" />
-           <p className="text-[9px] uppercase tracking-[0.5em] text-cream/10">Crafted in Andhra Pradesh</p>
+           <p className="text-[9px] uppercase tracking-[0.5em] text-cream/20">Crafted in Andhra Pradesh</p>
         </div>
       </div>
     </div>
